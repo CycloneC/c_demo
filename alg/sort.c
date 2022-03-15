@@ -141,7 +141,7 @@ void sort_shell(int *nums, int numsSize)
         {
             temp = nums[i];
             int j = i;
-            while (j > 0 && temp < nums[j - gap])
+            while ((j - gap) >= 0 && temp < nums[j - gap])
             {
                 nums[j] = nums[j - gap];
                 j -= gap;
@@ -267,12 +267,11 @@ void sort_quick(int *nums, int numsSize)
     sort_quick_recursion(nums, 0, numsSize - 1);
 }
 
-
 int main(int argc, char const *argv[])
 {
     int nums[] = {5, 3, 6, 7, 9, 5, 5, 2, 8, 1, 4, 5};
     int numsSize = sizeof(nums) / sizeof(int);
-    sort_type_t type = SORT_QUICK;
+    sort_type_t type = SORT_SHELL;
 
     print_nums(nums, numsSize);
 
