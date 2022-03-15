@@ -3,7 +3,7 @@
 #include "stdbool.h"
 #include "string.h"
 
-#define EXCHANGE(a, b) {(a) = (a) ^ (b); (b) = (a) ^ (b); (a) = (a) ^ (b);}
+#define SWAP(a, b) {(a) = (a) ^ (b); (b) = (a) ^ (b); (a) = (a) ^ (b);}
 
 typedef enum
 {
@@ -13,6 +13,7 @@ typedef enum
     SORT_INSERT,
     SORT_SHELL,
     SORT_MERGE,
+    SORT_QUICK,
 } sort_type_t;
 
 void print_nums(int *nums, int numsSize)
@@ -46,22 +47,22 @@ int cmp_int(const void *a , const void *b)
  */
 void sort_bubble(int *nums, int numsSize)
 {
-    bool is_exchange = false;
+    bool is_swap = false;
 
     for (int i = 0; i < numsSize - 1; i++)
     {
-        is_exchange = false;
+        is_swap = false;
 
         for (int j = 1; j < numsSize - i; j++)
         {
             if (nums[j] < nums[j - 1])
             {
-                EXCHANGE(nums[j], nums[j - 1]);
-                is_exchange = true;
+                SWAP(nums[j], nums[j - 1]);
+                is_swap = true;
             }
         }
 
-        if (!is_exchange)
+        if (!is_swap)
         {
             return;
         }
@@ -89,9 +90,9 @@ void sort_select(int *nums, int numsSize)
             }
         }
 
-        if (index != numsSize - i - 1) //注意此处判断，如果两者相等，则表示同一变量，同一变量不能使用EXCHANGE交互函数，除非使用带参数的交互函数
+        if (index != numsSize - i - 1) //注意此处判断，如果两者相等，则表示同一变量，同一变量不能使用SWAP交互函数，除非使用带参数的交互函数
         {
-            EXCHANGE(nums[index], nums[numsSize - i - 1]);
+            SWAP(nums[index], nums[numsSize - i - 1]);
         }
     }
 }
@@ -211,11 +212,67 @@ void sort_merge(int *nums, int numsSize)
     free(temp);
 }
 
+/**
+ * @description: 快速排序--递归函数
+ * @param {int} *nums
+ * @param {int} numsSize
+ * @return {*}
+ */
+void sort_quick_recursion(int *nums, int start, int end)
+{
+    int key, left, right;
+
+    if (start < end)
+    {
+        key = nums[start];
+        left = start;
+        right = end;
+        while (left < right)
+        {
+            while (nums[right] >= key && left < right)
+            {
+                right--;
+            }
+            
+            if (left < right)
+            {
+                nums[left++] = nums[right];
+            }
+            
+            while (nums[left] < key && left < right)
+            {
+                left++;
+            }
+
+            if (left < right)
+            {
+                nums[right--] = nums[left];
+            }
+        }
+
+        nums[left] = key;
+        sort_quick_recursion(nums, start, left - 1);
+        sort_quick_recursion(nums, left + 1, end);
+    }
+}
+
+/**
+ * @description: 快速排序--主函数
+ * @param {int} *nums
+ * @param {int} numsSize
+ * @return {*}
+ */
+void sort_quick(int *nums, int numsSize)
+{
+    sort_quick_recursion(nums, 0, numsSize - 1);
+}
+
+
 int main(int argc, char const *argv[])
 {
-    int nums[] = {3, 6, 7, 9, 2, 8, 1, 4, 5};
+    int nums[] = {5, 3, 6, 7, 9, 5, 5, 2, 8, 1, 4, 5};
     int numsSize = sizeof(nums) / sizeof(int);
-    sort_type_t type = SORT_MERGE;
+    sort_type_t type = SORT_QUICK;
 
     print_nums(nums, numsSize);
 
@@ -238,6 +295,9 @@ int main(int argc, char const *argv[])
         break;
     case SORT_MERGE:    //归并排序
         sort_merge(nums, numsSize);
+        break;
+    case SORT_QUICK:    //快速排序
+        sort_quick(nums, numsSize);
         break;
     default:
         break;
