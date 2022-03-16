@@ -5,7 +5,7 @@
 
 #define SWAP(a, b) {(a) = (a) ^ (b); (b) = (a) ^ (b); (a) = (a) ^ (b);}
 
-typedef enum
+typedef enum 
 {
     SORT_C_LIB = 0,
     SORT_BUBBLE,
@@ -14,6 +14,7 @@ typedef enum
     SORT_SHELL,
     SORT_MERGE,
     SORT_QUICK,
+    SORT_HAEP,
 } sort_type_t;
 
 void print_nums(int *nums, int numsSize)
@@ -267,11 +268,55 @@ void sort_quick(int *nums, int numsSize)
     sort_quick_recursion(nums, 0, numsSize - 1);
 }
 
+void sort_heap_adjust(int *nums, int start, int end)
+{
+    int dad, son;
+
+    dad = start;
+    son = dad * 2 + 1;
+    while (son <= end)
+    {
+        if ((son + 1 <= end) && (nums[son] < nums[son + 1])) //取两个子节点最大的一个
+        {
+            son++;
+        }
+
+        if (nums[dad] > nums[son])
+        {
+            return;
+        }
+
+        SWAP(nums[dad], nums[son]);
+        dad = son;
+        son = dad * 2 + 1;
+    }
+}
+
+/**
+ * @description: 堆排序
+ * @param {int} *nums
+ * @param {int} numsSize
+ * @return {*}
+ */
+void sort_heap(int *nums, int numsSize)
+{
+    for (int i = (numsSize / 2 - 1); i >= 0; i--)
+    {
+        sort_heap_adjust(nums, i, numsSize - 1);
+    }
+
+    for (int i = 0; i < numsSize - 1; i++)
+    {
+        SWAP(nums[numsSize - 1 - i], nums[0]);
+        sort_heap_adjust(nums, 0, numsSize - 2 - i);
+    }
+}
+
 int main(int argc, char const *argv[])
 {
     int nums[] = {5, 3, 6, 7, 9, 5, 5, 2, 8, 1, 4, 5};
     int numsSize = sizeof(nums) / sizeof(int);
-    sort_type_t type = SORT_SHELL;
+    sort_type_t type = SORT_HAEP;
 
     print_nums(nums, numsSize);
 
@@ -297,6 +342,9 @@ int main(int argc, char const *argv[])
         break;
     case SORT_QUICK:    //快速排序
         sort_quick(nums, numsSize);
+        break;
+    case SORT_HAEP:     //堆排序
+        sort_heap(nums, numsSize);
         break;
     default:
         break;
