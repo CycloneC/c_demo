@@ -15,6 +15,8 @@ typedef enum
     SORT_MERGE,
     SORT_QUICK,
     SORT_HAEP,
+    SORT_COUNT,
+    SORT_BUCKET,
 } sort_type_t;
 
 void print_nums(int *nums, int numsSize)
@@ -312,11 +314,67 @@ void sort_heap(int *nums, int numsSize)
     }
 }
 
+/**
+ * @description: 计数排序
+ * @param {int} *nums
+ * @param {int} numsSize
+ * @return {*}
+ */
+void sort_count(int *nums, int numsSize)
+{
+    int max = nums[0], min = nums[0];
+    
+    for (int i = 1; i < numsSize; i++)
+    {
+        if (nums[i] > max)
+        {
+            max = nums[i];
+        }
+
+        if (nums[i] < min)
+        {
+            min = nums[i];
+        }
+    }
+    
+    int count = max - min + 1;
+    int *array = (int *)calloc(count, sizeof(int));
+
+    for (int i = 0; i < numsSize; i++)
+    {
+        int pos = nums[i] - min;
+        array[pos]++;
+    }
+
+    int index = 0;
+    for (int i = 0; i < count; i++)
+    {
+        while (array[i] > 0)
+        {
+            nums[index++] = i + min;
+            array[i]--;
+        }
+    }
+
+    free(array);
+}
+
+/**
+ * @description: 桶排序
+ * @param {int} *nums
+ * @param {int} numsSize
+ * @return {*}
+ */
+void sort_bucket(int *nums, int numsSize)
+{
+
+}
+
 int main(int argc, char const *argv[])
 {
     int nums[] = {5, 3, 6, 7, 9, 5, 5, 2, 8, 1, 4, 5};
     int numsSize = sizeof(nums) / sizeof(int);
-    sort_type_t type = SORT_HAEP;
+    sort_type_t type = SORT_COUNT;
 
     print_nums(nums, numsSize);
 
@@ -345,6 +403,12 @@ int main(int argc, char const *argv[])
         break;
     case SORT_HAEP:     //堆排序
         sort_heap(nums, numsSize);
+        break;
+    case SORT_COUNT:    //计数排序
+        sort_count(nums, numsSize);
+        break;
+    case SORT_BUCKET:   //桶排序
+        sort_bucket(nums, numsSize);
         break;
     default:
         break;
