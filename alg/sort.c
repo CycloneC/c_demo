@@ -2,8 +2,10 @@
 #include "stdio.h"
 #include "stdbool.h"
 #include "string.h"
+#include "time.h"
 
 #define SWAP(a, b) {(a) = (a) ^ (b); (b) = (a) ^ (b); (a) = (a) ^ (b);}
+#define CHECK(nums, numsSize) {if ((nums == NULL) || numsSize < 2) return;}
 
 typedef enum 
 {
@@ -17,11 +19,12 @@ typedef enum
     SORT_HAEP,
     SORT_COUNT,
     SORT_BUCKET,
+    SORT_RADIX,
 } sort_type_t;
 
 void print_nums(int *nums, int numsSize)
 {
-    printf("\n\t[ ");
+    printf("[ ");
     for (int i = 0; i < numsSize; i++)
     {
         printf("%d ", nums[i]);
@@ -51,6 +54,8 @@ int cmp_int(const void *a , const void *b)
 void sort_bubble(int *nums, int numsSize)
 {
     bool is_swap = false;
+
+    CHECK(nums, numsSize);
 
     for (int i = 0; i < numsSize - 1; i++)
     {
@@ -82,6 +87,8 @@ void sort_select(int *nums, int numsSize)
 {
     int index;
 
+    CHECK(nums, numsSize);
+
     for (int i = 0; i < numsSize - 1; i++)
     {
         index = 0;
@@ -110,6 +117,8 @@ void sort_insert(int *nums, int numsSize)
 {
     int temp;
 
+    CHECK(nums, numsSize);
+
     for (int i = 1; i < numsSize; i++)
     {
         temp = nums[i];
@@ -137,6 +146,8 @@ void sort_shell(int *nums, int numsSize)
 {
     int temp;
     int gap = numsSize >> 1;
+
+    CHECK(nums, numsSize);
     
     while (gap > 0)
     {
@@ -210,6 +221,8 @@ void sort_merge_recursion(int *nums, int *temp, int left, int right)
  */
 void sort_merge(int *nums, int numsSize)
 {
+    CHECK(nums, numsSize);
+
     int *temp = (int *)calloc(numsSize, sizeof(int));
     sort_merge_recursion(nums, temp, 0, numsSize - 1);
     free(temp);
@@ -267,6 +280,8 @@ void sort_quick_recursion(int *nums, int start, int end)
  */
 void sort_quick(int *nums, int numsSize)
 {
+    CHECK(nums, numsSize);
+
     sort_quick_recursion(nums, 0, numsSize - 1);
 }
 
@@ -302,6 +317,8 @@ void sort_heap_adjust(int *nums, int start, int end)
  */
 void sort_heap(int *nums, int numsSize)
 {
+    CHECK(nums, numsSize);
+
     for (int i = (numsSize / 2 - 1); i >= 0; i--)
     {
         sort_heap_adjust(nums, i, numsSize - 1);
@@ -323,6 +340,8 @@ void sort_heap(int *nums, int numsSize)
 void sort_count(int *nums, int numsSize)
 {
     int max = nums[0], min = nums[0];
+
+    CHECK(nums, numsSize);
     
     for (int i = 1; i < numsSize; i++)
     {
@@ -359,6 +378,37 @@ void sort_count(int *nums, int numsSize)
     free(array);
 }
 
+typedef struct _bucket_item
+{
+    int data;
+    struct _bucket_item *next;
+}bucket_item_t;
+
+static void _list_insert(bucket_item_t *head, int value)
+{
+    bucket_item_t *item = calloc(1, sizeof(bucket_item_t));
+    item->data = value;
+
+    while (head->next)
+    {
+        if (value < head->next->data)
+        {
+            break;
+        }
+
+        head = head->next;
+    }
+
+    if (head->next == NULL)
+    {
+        head->next = item;
+        return;
+    }
+
+    item->next = head->next;
+    head->next = item;
+}
+
 /**
  * @description: 桶排序
  * @param {int} *nums
@@ -367,17 +417,170 @@ void sort_count(int *nums, int numsSize)
  */
 void sort_bucket(int *nums, int numsSize)
 {
+    int max = nums[0], min = nums[0];
 
+    CHECK(nums, numsSize);
+    
+    //获取最大值和最小值
+    for (int i = 1; i < numsSize; i++)
+    {
+        if (nums[i] > max)
+        {
+            max = nums[i];
+        }
+
+        if (nums[i] < min)
+        {
+            min = nums[i];
+        }
+    }
+
+    //计算桶大小和桶个数，初始化桶队列
+    int bucket_size = (max - min) / numsSize + 1;
+    int bucket_count = (max - min) / bucket_size + 1;
+    bucket_item_t *bucket_head = (bucket_item_t *)calloc(bucket_count, sizeof(bucket_item_t));
+    
+    //将序列分配到桶中
+    for (int i = 0; i < numsSize; i++)
+    {
+        int bucket_index = (nums[i] - min) / bucket_size;
+
+        /* 根据大小插入到链表中 */
+        _list_insert(&bucket_head[bucket_index], nums[i]);
+    }
+
+    //将桶中的数据还原到序列中
+    int index = 0;
+    for (int i = 0; i < bucket_count; i++)
+    {
+        bucket_item_t *head = &bucket_head[i];
+
+        while (head->next)
+        {
+            nums[index++] = head->next->data;
+            head = head->next;
+        }
+    }
+
+    //释放内存
+    for (int i = 0; i < bucket_count; i++)
+    {
+        bucket_item_t *head = &bucket_head[i];
+
+        head = head->next;
+        while (head)
+        {
+            bucket_item_t *temp = head;
+            head = head->next;
+            free(temp);
+        }
+    }
+    free(bucket_head);
+}
+
+/**
+ * @description: 基数排序
+ * @param {int} *nums
+ * @param {int} numsSize
+ * @return {*}
+ */
+void sort_radix(int *nums, int numsSize)
+{
+    int max = nums[0];
+    int width = 0;
+
+    CHECK(nums, numsSize);
+    
+    //获取最大值和最小值
+    for (int i = 1; i < numsSize; i++)
+    {
+        if (nums[i] > max)
+        {
+            max = nums[i];
+        }
+    }
+
+    //获取位宽
+    while (max /= 10)
+    {
+        width++;
+    }
+
+    //初始化10个桶，序号0~9
+    bucket_item_t *bucket_head = (bucket_item_t *)calloc(10, sizeof(bucket_item_t));
+    
+    for (int i = 0; i <= width; i++)
+    {
+        int pow = 1;
+        for (int j = 0; j < i; j++)
+        {
+            pow *= 10;
+        }
+
+        //将数据存放到桶中
+        for (int j = 0; j < numsSize; j++)
+        {
+            int bucket_index = nums[j] / pow % 10;
+            _list_insert(&bucket_head[bucket_index], nums[j]);
+        }
+
+        //将桶中数据存放到序列中
+        int index = 0;
+        for (int j = 0; j < 10; j++)
+        {
+            bucket_item_t *head = &bucket_head[j];
+
+            while (head->next)
+            {
+                nums[index++] = head->next->data;
+                head = head->next;
+            }
+        }
+
+        //释放内存
+        for (int j = 0; j < 10; j++)
+        {
+            bucket_item_t *head = &bucket_head[j];
+
+            head = head->next;
+            while (head)
+            {
+                bucket_item_t *temp = head;
+                head = head->next;
+                free(temp);
+            }
+
+            bucket_head[j].next = NULL;
+        }
+    }
+    
+    free(bucket_head);
 }
 
 int main(int argc, char const *argv[])
 {
-    int nums[] = {5, 3, 6, 7, 9, 5, 5, 2, 8, 1, 4, 5};
-    int numsSize = sizeof(nums) / sizeof(int);
-    sort_type_t type = SORT_COUNT;
+    int numsSize;
+    int *nums = NULL;
+    int *nums_cmp = NULL;
 
+    //随机初始化测试序列
+    srand(time(NULL));
+    numsSize = 0;//rand() % 100; //序列长度0 ~ 99
+    if (numsSize)
+    {
+        nums = (int *)calloc(numsSize, sizeof(int));
+        nums_cmp = (int *)calloc(numsSize, sizeof(int));
+        for (int i = 0; i < numsSize; i++)
+        {
+            nums[i] = rand() % 10000; //随机数0~9999
+            nums_cmp[i] = nums[i];
+        }
+    }
+    printf("src:\n");
     print_nums(nums, numsSize);
 
+    //使用自己写的排序算法
+    sort_type_t type = SORT_SELECT;
     switch (type)
     {
     case SORT_C_LIB:    //c库函数排序
@@ -410,11 +613,32 @@ int main(int argc, char const *argv[])
     case SORT_BUCKET:   //桶排序
         sort_bucket(nums, numsSize);
         break;
+    case SORT_RADIX:   //基数排序
+        sort_radix(nums, numsSize);
+        break;
     default:
         break;
     }
+    
+    //使用库排序算法
+    qsort(nums_cmp, numsSize, sizeof(int), cmp_int);
 
+    printf("my result:\n");
     print_nums(nums, numsSize);
+    printf("standard result:\n");
+    print_nums(nums_cmp, numsSize);
+
+    //比较结果
+    for (int i = 0; i < numsSize; i++)
+    {
+        if (nums_cmp[i] != nums[i])
+        {
+            printf("\n!!!sort err!!! sort alg=%d, err index=%d\n", type, i);
+            return -1;
+        }
+    }
+    
+    printf("\n!!!sort ok!!!\n");
     return 0;
 }
 
