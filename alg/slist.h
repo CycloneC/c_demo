@@ -117,7 +117,7 @@ static inline int slist_len(slist_t *head)
     while (head->next)
     {
         len++;
-        head->next;
+        head = head->next;
     }
     
     return len;
